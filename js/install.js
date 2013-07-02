@@ -113,33 +113,45 @@ function creditAllConsumedItems() {
 	}
 }
 
+var purchasePrompt;
+if (device.simulatingMobileNative) {
+	purchasePrompt = function(cb) {
+		var result = confirm('Would you like to complete the purchase?');
+		cb(result);
+	};
+} else {
+	//TODO something that works on native
+}
+
 /*
  * Run purchase simulation.
  */
 function simulatePurchase(item, simulate) {
+	var success = false;
 	if (!simulate || simulate === "simulate") {
-		setTimeout(function() {
-			logger.log("Simulating item purchase:", item);
-			if (!purchasedItems[item]) {
-				purchasedItem(item);
-				setTimeout(function() {
-					logger.log("Simulating item consume:", item);
-					consumePurchasedItem(item);
-				}, 2000);
-			} else {
-				logger.log("Item is already purchased.");
-				if (typeof onFailure === "function") {
-					onFailure("already owned", item);
+		purchasePrompt(function(success) {
+			if (success) {
+				if (!purchasedItems[item]) {
+					purchasedItem(item);
+					setTimeout(function() {
+						logger.log("Simulating item consume:", item);
+						consumePurchasedItem(item);
+					}, 2000);
+				} else {
+					logger.log("Item is already purchased.");
+					if (typeof onFailure === "function") {
+						onFailure("already owned", item);
+					}
 				}
+			} else {
+				logger.log("Simulating item failure:", item);
+				setTimeout(function() {
+					if (typeof onFailure === "function") {
+						onFailure(simulate, item);
+					}
+				}, 500);
 			}
-		}, 2000);
-	} else {
-		setTimeout(function() {
-			logger.log("Simulating item failure:", item);
-			if (typeof onFailure === "function") {
-				onFailure(simulate, item);
-			}
-		}, 1000);
+		});
 	}
 }
 
