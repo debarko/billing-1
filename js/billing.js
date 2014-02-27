@@ -282,6 +282,7 @@ if (!GLOBAL.NATIVE || device.simulatingMobileNative) {
 
 		// Attempt to consume it immediately
 		NATIVE.plugins.sendEvent("BillingPlugin", "consume", JSON.stringify({
+			sku: sku,
 			token: token,
 			receiptString: (receiptString)?receiptString:"noreceipt"
 		}));
@@ -289,7 +290,6 @@ if (!GLOBAL.NATIVE || device.simulatingMobileNative) {
 
 	NATIVE.events.registerHandler('billingPurchase', function(evt) {
 		logger.log("Got billingPurchase event:", JSON.stringify(evt));
-
 		// If SKU event,
 		var sku = evt.sku;
 		if (!sku || evt.failure) {
@@ -319,7 +319,6 @@ if (!GLOBAL.NATIVE || device.simulatingMobileNative) {
 
 		var token = evt.token;
 		var item = tokenItem[token];
-
 		// If not failed,
 		if (!evt.failure) {
 			consumePurchasedItem(item, token, evt.receiptString);
@@ -328,6 +327,7 @@ if (!GLOBAL.NATIVE || device.simulatingMobileNative) {
 
 			setTimeout(function() {
 				NATIVE.plugins.sendEvent("BillingPlugin", "consume", JSON.stringify({
+					sku: item,
 					token: token,
 					receiptString: (evt.receiptString)?receiptString:"noreceipt"
 				}));

@@ -1,7 +1,7 @@
 {
 		"copyFiles": [
 			"BillingPlugin.java",
-			"IInAppBillingService.aidl"
+			"INokiaIAPService.aidl"
 		],
 		"libraries": [
 		],

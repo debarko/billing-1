@@ -33,12 +33,12 @@ import android.app.PendingIntent;
 import com.tealeaf.EventQueue;
 import com.tealeaf.event.*;
 
-import com.android.vending.billing.IInAppBillingService;
+import com.nokia.payment.iap.aidl.INokiaIAPService;
 
 public class BillingPlugin implements IPlugin {
 	Context _ctx = null;
 	Activity _activity = null;
-	IInAppBillingService mService = null;
+	INokiaIAPService mService = null;
 	ServiceConnection mServiceConn = null;
 	Object mServiceLock = new Object();
 	static private final int BUY_REQUEST_CODE = 123450;
@@ -63,6 +63,7 @@ public class BillingPlugin implements IPlugin {
 			this.token = token;
 			this.failure = failure;
 			this.receiptString = receiptString;
+			//logger.log("token receive"+token);
 		}
 	}
 
@@ -107,7 +108,7 @@ public class BillingPlugin implements IPlugin {
 				public void onServiceConnected(ComponentName name, 
 						IBinder service) {
 					synchronized (mServiceLock) {
-						mService = IInAppBillingService.Stub.asInterface(service);
+						mService = INokiaIAPService.Stub.asInterface(service);
 					}
 
 					EventQueue.pushEvent(new ConnectedEvent(true));
@@ -121,7 +122,7 @@ public class BillingPlugin implements IPlugin {
 		_activity = activity;
 
 		_ctx.bindService(new 
-				Intent("com.android.vending.billing.InAppBillingService.BIND"),
+				Intent("com.nokia.payment.iapenabler.InAppBillingService.BIND"),
 				mServiceConn, Context.BIND_AUTO_CREATE);
 	}
 
@@ -209,6 +210,14 @@ public class BillingPlugin implements IPlugin {
 			JSONObject jsonObject = new JSONObject(jsonData);
 			final String TOKEN = jsonObject.getString("token");
 			final String RECEIPT = jsonObject.getString("receiptString");
+			//logger.log("RECEIPT");
+			//logger.log("=============");
+			//logger.log(RECEIPT);
+			JSONObject jsonRECEIPT = new JSONObject(RECEIPT);
+			final String PRODUCTDATA = jsonRECEIPT.getString("purchaseData");
+			JSONObject jsonPRODUCTDATA = new JSONObject(PRODUCTDATA);
+			final String SKU = jsonPRODUCTDATA.getString("productId");
+			//logger.log(SKU);
 			token = TOKEN;
 
 			synchronized (mServiceLock) {
@@ -233,7 +242,7 @@ public class BillingPlugin implements IPlugin {
 								return;
 							}
 
-							response = mService.consumePurchase(3, _ctx.getPackageName(), TOKEN);
+							response = mService.consumePurchase(3, _ctx.getPackageName(), SKU, TOKEN);
 						}
 
 						if (response != 0) {
@@ -273,7 +282,20 @@ public class BillingPlugin implements IPlugin {
 					return;
 				}
 
-				ownedItems = mService.getPurchases(3, _ctx.getPackageName(), "inapp", null);
+				ArrayList<String> products = new ArrayList<String>();
+			    products.add("1212928");
+			    products.add("1214232");
+			    products.add("1214237");
+			    products.add("1214238");
+			    products.add("1214241");
+			    products.add("1212927");
+			    products.add("1214230");
+			    products.add("1214227");
+			    products.add("1214229");
+			    products.add("1214231");
+			    Bundle queryBundle = new Bundle();
+    			queryBundle.putStringArrayList("ITEM_ID_LIST", products);
+				ownedItems = mService.getPurchases(3, _ctx.getPackageName(), "inapp", queryBundle, null);
 			}
 
 			// If unable to create bundle,
@@ -371,7 +393,6 @@ public class BillingPlugin implements IPlugin {
 						switch (resultCode) {
 							case Activity.RESULT_OK:
 								String token = jo.getString("purchaseToken");
-
 								logger.log("{billing} Successfully purchased SKU:", sku);
 								JSONObject receiptStringCombo = new JSONObject();
 								receiptStringCombo.put("purchaseData", data.getStringExtra("INAPP_PURCHASE_DATA"));
